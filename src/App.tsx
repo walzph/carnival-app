@@ -12,11 +12,13 @@ import Login from './pages/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import CreateEventModal from './components/CreateEventModal';
 import { CreateEventProvider, useCreateEvent } from './contexts/CreateEventContext';
+import LandingPage from './pages/LandingPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
 
   if (user === undefined || user === null) {
+    return <LandingPage />;
     return <div>Loading...</div>; // Prevents incorrect redirection
   }
 
