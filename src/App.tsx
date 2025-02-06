@@ -9,6 +9,8 @@ import MusicPage from './pages/MusicPage';
 import CostumePage from './pages/CostumePage';
 import Login from './pages/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import CreateEventModal from './components/CreateEventModal';
+import { CreateEventProvider, useCreateEvent } from './contexts/CreateEventContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -18,6 +20,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
+  const { showCreateEvent, setShowCreateEvent } = useCreateEvent();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500">
@@ -44,6 +47,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+      {showCreateEvent && <CreateEventModal onClose={() => setShowCreateEvent(false)} />}
     </div>
   );
 }
@@ -51,47 +55,49 @@ function Layout({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AdminPanel />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/invite/:eventId"
-              element={
-                <ProtectedRoute>
-                  <InvitePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/respond/:inviteId" element={<RespondPage />} />
-            <Route
-              path="/music/:eventId"
-              element={
-                <ProtectedRoute>
-                  <MusicPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/costumes/:eventId"
-              element={
-                <ProtectedRoute>
-                  <CostumePage />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Layout>
-        <Toaster position="top-right" />
-      </BrowserRouter>
+      <CreateEventProvider>
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/invite/:eventId"
+                element={
+                  <ProtectedRoute>
+                    <InvitePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/respond/:inviteCode" element={<RespondPage />} />
+              <Route
+                path="/music/:eventId"
+                element={
+                  <ProtectedRoute>
+                    <MusicPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/costumes/:eventId"
+                element={
+                  <ProtectedRoute>
+                    <CostumePage />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Layout>
+          <Toaster position="top-right" />
+        </BrowserRouter>
+      </CreateEventProvider>
     </AuthProvider>
   );
 }

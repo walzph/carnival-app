@@ -15,25 +15,26 @@ interface Event {
 interface Invitation {
   id: string;
   event_id: string;
+  guest_name: string;
   status: 'pending' | 'accepted' | 'declined';
 }
 
 export default function RespondPage() {
-  const { inviteId } = useParams();
+  const { inviteCode } = useParams();
   const [event, setEvent] = useState<Event | null>(null);
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [responded, setResponded] = useState(false);
 
   useEffect(() => {
     loadInvitationAndEvent();
-  }, [inviteId]);
+  }, [inviteCode]);
 
   async function loadInvitationAndEvent() {
     try {
       const { data: invitation, error: inviteError } = await supabase
         .from('invitations')
         .select('*, events(*)')
-        .eq('id', inviteId)
+        .eq('invite_code', inviteCode)
         .single();
 
       if (inviteError) throw inviteError;
@@ -52,12 +53,13 @@ export default function RespondPage() {
       const { error } = await supabase
         .from('invitations')
         .update({ status })
-        .eq('id', inviteId);
+        .eq('invite_code', inviteCode);
 
       if (error) throw error;
 
       setResponded(true);
       toast.success(`You have ${status} the invitation`);
+      loadInvitationAndEvent(); // Refresh the data
     } catch (error) {
       toast.error('Error updating response');
     }
@@ -74,7 +76,10 @@ export default function RespondPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 text-center">
-        <h1 className="text-3xl font-bold text-white mb-4">{event.title}</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">{event.title}</h1>
+        <p className="text-xl text-white/90 mb-4">
+          Hello, {invitation.guest_name}!
+        </p>
         <p className="text-white/80 mb-6">{event.description}</p>
         
         <div className="space-y-4 mb-8">

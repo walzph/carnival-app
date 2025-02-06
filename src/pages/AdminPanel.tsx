@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, Users, Music, Shirt } from 'lucide-react';
+import { Plus, Calendar, Users, Music, Shirt, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useCreateEvent } from '../contexts/CreateEventContext';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import CreateEventModal from '../components/CreateEventModal';
 
 interface Event {
   id: string;
@@ -17,14 +19,8 @@ interface Event {
 
 export default function AdminPanel() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    date: '',
-    location: '',
-  });
   const { user } = useAuth();
+  const { showCreateEvent, setShowCreateEvent } = useCreateEvent();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,24 +41,23 @@ export default function AdminPanel() {
     }
   }
 
-  async function createEvent(e: React.FormEvent) {
-    e.preventDefault();
+  async function deleteEvent(eventId: string) {
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+
     try {
-      const { error } = await supabase.from('events').insert([
-        {
-          ...newEvent,
-          created_by: user?.id,
-        },
-      ]);
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
 
       if (error) throw error;
 
-      toast.success('Event created successfully!');
-      setIsCreating(false);
-      setNewEvent({ title: '', description: '', date: '', location: '' });
-      loadEvents();
+      toast.success('Event deleted successfully');
+      setEvents(events.filter(event => event.id !== eventId));
     } catch (error) {
-      toast.error('Error creating event');
+      toast.error('Error deleting event');
     }
   }
 
@@ -71,7 +66,7 @@ export default function AdminPanel() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">Your Carnival Events</h1>
         <button
-          onClick={() => setIsCreating(true)}
+          onClick={() => setShowCreateEvent(true)}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
           <Plus className="h-5 w-5" />
@@ -79,77 +74,22 @@ export default function AdminPanel() {
         </button>
       </div>
 
-      {isCreating && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">Create New Event</h2>
-            <form onSubmit={createEvent} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  required
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  required
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date</label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  type="text"
-                  required
-                  value={newEvent.location}
-                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                  Create Event
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {events.map((event) => (
           <div
             key={event.id}
             className="bg-white/10 backdrop-blur-lg rounded-lg p-6 space-y-4"
           >
-            <h3 className="text-xl font-bold text-white">{event.title}</h3>
+            <div className="flex justify-between items-start">
+              <h3 className="text-xl font-bold text-white">{event.title}</h3>
+              <button
+                onClick={() => deleteEvent(event.id)}
+                className="text-white/60 hover:text-red-400 transition-colors"
+                title="Delete event"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            </div>
             <p className="text-white/80">{event.description}</p>
             <div className="flex items-center gap-2 text-white/80">
               <Calendar className="h-5 w-5" />
@@ -185,6 +125,13 @@ export default function AdminPanel() {
           </div>
         ))}
       </div>
+
+      {showCreateEvent && (
+        <CreateEventModal 
+          onClose={() => setShowCreateEvent(false)}
+          onEventCreated={loadEvents}
+        />
+      )}
     </div>
   );
 }
