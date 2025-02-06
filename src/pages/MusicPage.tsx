@@ -18,6 +18,28 @@ interface Track {
   created_at: string;
 }
 
+function getSpotifyTrackId(url: string): string | null {
+  try {
+    // Handle different Spotify URL formats
+    const patterns = [
+      /spotify:track:([a-zA-Z0-9]+)/, // Spotify URI
+      /open\.spotify\.com\/track\/([a-zA-Z0-9]+)/, // Web URL
+      /spotify\.com\/track\/([a-zA-Z0-9]+)/, // Alternative web URL
+      /([a-zA-Z0-9]{22})/ // Direct track ID
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
 export default function MusicPage() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -25,6 +47,7 @@ export default function MusicPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [newTrackUrl, setNewTrackUrl] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadEventAndTracks();
@@ -49,11 +72,19 @@ export default function MusicPage() {
 
   async function submitTrack(e: React.FormEvent) {
     e.preventDefault();
+    setError('');
+
+    const trackId = getSpotifyTrackId(newTrackUrl);
+    if (!trackId) {
+      setError('Please enter a valid Spotify track URL or ID');
+      return;
+    }
+
     try {
       const { error } = await supabase.from('spotify_tracks').insert([
         {
           event_id: eventId,
-          track_url: newTrackUrl,
+          track_url: `https://open.spotify.com/track/${trackId}`,
           submitted_by: user?.id,
         },
       ]);
@@ -99,47 +130,70 @@ export default function MusicPage() {
         </h1>
       </div>
 
-      <form onSubmit={submitTrack} className="flex gap-4">
-        <input
-          type="url"
-          required
-          value={newTrackUrl}
-          onChange={(e) => setNewTrackUrl(e.target.value)}
-          placeholder="Paste Spotify track URL"
-          className="flex-1 rounded-lg bg-white/10 border-white/20 text-white placeholder-white/50"
-        />
-        <button
-          type="submit"
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-        >
-          <Music className="h-5 w-5" />
-          Add Track
-        </button>
+      <form onSubmit={submitTrack} className="space-y-2">
+        <div className="flex gap-4">
+          <input
+            type="text"
+            required
+            value={newTrackUrl}
+            onChange={(e) => setNewTrackUrl(e.target.value)}
+            placeholder="Paste Spotify track URL or ID"
+            className="flex-1 rounded-lg bg-white/10 border-white/20 text-white placeholder-white/50"
+          />
+          <button
+            type="submit"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            <Music className="h-5 w-5" />
+            Add Track
+          </button>
+        </div>
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+        <p className="text-white/60 text-sm">
+          You can paste a Spotify track URL or just the track ID (e.g., 11dFghVXANMlKmJXsNCbNl)
+        </p>
       </form>
 
-      <div className="grid gap-4">
+      <div className="grid gap-6">
         {tracks
           .sort((a, b) => b.votes - a.votes)
-          .map((track) => (
-            <div
-              key={track.id}
-              className="flex items-center justify-between bg-white/10 backdrop-blur-lg rounded-lg p-4"
-            >
-              <div className="flex-1">
-                <div className="text-white break-all">{track.track_url}</div>
-                <div className="text-sm text-white/60">
-                  Added {new Date(track.created_at).toLocaleDateString()}
+          .map((track) => {
+            const trackId = getSpotifyTrackId(track.track_url);
+            return (
+              <div
+                key={track.id}
+                className="bg-white/10 backdrop-blur-lg rounded-lg p-4 space-y-4"
+              >
+                {trackId ? (
+                  <iframe
+                    style={{ borderRadius: '12px' }}
+                    src={`https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`}
+                    width="100%"
+                    height="152"
+                    frameBorder="0"
+                    allowFullScreen
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="rounded-lg"
+                  />
+                ) : (
+                  <div className="text-red-400">Invalid Spotify URL</div>
+                )}
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-white/60">
+                    Added {new Date(track.created_at).toLocaleDateString()}
+                  </div>
+                  <button
+                    onClick={() => voteForTrack(track.id)}
+                    className="flex items-center gap-2 px-3 py-1 bg-purple-600/50 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                    {track.votes}
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={() => voteForTrack(track.id)}
-                className="flex items-center gap-2 px-3 py-1 bg-purple-600/50 text-white rounded-lg hover:bg-purple-600"
-              >
-                <ThumbsUp className="h-4 w-4" />
-                {track.votes}
-              </button>
-            </div>
-          ))}
+            );
+          })}
       </div>
     </div>
   );

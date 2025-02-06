@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { PartyPopper as Party } from 'lucide-react';
 import AdminPanel from './pages/AdminPanel';
@@ -7,6 +7,7 @@ import InvitePage from './pages/InvitePage';
 import RespondPage from './pages/RespondPage';
 import MusicPage from './pages/MusicPage';
 import CostumePage from './pages/CostumePage';
+import PhotoGallery from './pages/PhotoGallery';
 import Login from './pages/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import CreateEventModal from './components/CreateEventModal';
@@ -36,19 +37,28 @@ function Layout({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Party className="h-8 w-8 text-white" />
-              <span className="ml-2 text-xl font-bold text-white">Carnival Planner</span>
+              <Link to="/" className="flex items-center">
+                <Party className="h-8 w-8 text-white" />
+                <span className="ml-2 text-xl font-bold text-white">alaafYOU</span>
+              </Link>
             </div>
-            {user && (
-              <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4">
+              {user ? (
                 <button
                   onClick={() => signOut()}
                   className="text-white hover:text-gray-200 transition-colors"
                 >
                   Sign Out
                 </button>
-              </div>
-            )}
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -98,6 +108,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CostumePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/photos/:eventId"
+                element={
+                  <ProtectedRoute>
+                    <PhotoGallery />
                   </ProtectedRoute>
                 }
               />

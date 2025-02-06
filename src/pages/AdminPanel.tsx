@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, Users, Music, Shirt, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Music, Shirt, Trash2, Image } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCreateEvent } from '../contexts/CreateEventContext';
@@ -99,27 +99,34 @@ export default function AdminPanel() {
               <Users className="h-5 w-5" />
               {event.location}
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => navigate(`/invite/${event.id}`)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
               >
                 <Users className="h-4 w-4" />
                 Invites
               </button>
               <button
                 onClick={() => navigate(`/music/${event.id}`)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
               >
                 <Music className="h-4 w-4" />
                 Music
               </button>
               <button
                 onClick={() => navigate(`/costumes/${event.id}`)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 <Shirt className="h-4 w-4" />
                 Costumes
+              </button>
+              <button
+                onClick={() => navigate(`/photos/${event.id}`)}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Image className="h-4 w-4" />
+                Photos
               </button>
             </div>
           </div>
