@@ -14,7 +14,15 @@ import { CreateEventProvider, useCreateEvent } from './contexts/CreateEventConte
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/login" />;
+
+  if (user === undefined || user === null) {
+    return <div>Loading...</div>; // Prevents incorrect redirection
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
   return <>{children}</>;
 };
 
